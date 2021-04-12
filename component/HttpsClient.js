@@ -7,6 +7,7 @@ async function getCredentials(){
     return {csrf:csrf,sessionid:sessionid}
 }
 
+
 const HttpsClient = {
 
     get: async function(url){
