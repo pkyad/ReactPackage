@@ -3,7 +3,6 @@ import React, { Component }  from 'react';
 import { Alert, ScrollView, StyleSheet, View,StatusBar, Text, TextInput, Picker, TouchableHighlight,TouchableOpacity, ImageBackground, Image,AsyncStorage,Keyboard,Linking,PermissionsAndroid,ToastAndroid,Dimensions , ActivityIndicator} from 'react-native';
 import Constants from 'expo-constants';
 import SmsListener from 'react-native-android-sms-listener'
-import GradientButton from "react-native-gradient-buttons";
 import { FontAwesome } from '@expo/vector-icons';
 import * as Expo from 'expo';
 import * as Permissions from 'expo-permissions';

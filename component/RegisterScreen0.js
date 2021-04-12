@@ -4,7 +4,6 @@ import { Alert, ScrollView, StyleSheet, View, Text, TextInput, Picker,StatusBar,
 import { StackNavigator } from 'react-navigation';
 import Constants from 'expo-constants';
 import SmsListener from 'react-native-android-sms-listener'
-import GradientButton from "react-native-gradient-buttons";
 import { FontAwesome } from '@expo/vector-icons';
 import Setting from '../constants/Settings';
 import * as Expo from 'expo';

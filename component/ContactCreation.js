@@ -16,7 +16,6 @@ import MapView from 'react-native-maps';
 
 
 import { StackNavigator } from 'react-navigation';
-import GradientButton from "react-native-gradient-buttons";
 import * as Expo from 'expo';
 import * as Permissions from 'expo-permissions';
 import Svg, { Circle, Rect,Path,Defs,G,Mask} from 'react-native-svg';

@@ -2,7 +2,7 @@ import React from 'react';
 import {
   Image,Platform,ScrollView,StyleSheet,
   Text,TouchableOpacity,View,Slider,
-  Dimensions, Alert, FlatList, AppState, BackHandler , AsyncStorage,ActivityIndicator,ToastAndroid,RefreshControl,StatusBar,Vibration,TouchableWithoutFeedback,TextInput,ViewPropTypes
+  Dimensions, Alert, FlatList, AppState, BackHandler ,Linking, AsyncStorage,ActivityIndicator,ToastAndroid,RefreshControl,StatusBar,Vibration,TouchableWithoutFeedback,TextInput,ViewPropTypes
 } from 'react-native';
 import { FontAwesome,FontAwesome5,MaterialCommunityIcons,Feather,MaterialIcons,Octicons ,AntDesign ,Entypo} from '@expo/vector-icons';
 import  Constants  from 'expo-constants';
@@ -14,6 +14,7 @@ import {SearchBar}from 'react-native-elements';
 import moment from 'moment';
 import  { HttpsClient }  from './HttpsClient.js';
 import PropTypes from 'prop-types';
+import * as FileSystem from 'expo-file-system';
 
 const { width,height } = Dimensions.get('window');
 
@@ -25,12 +26,14 @@ export default class ViewNewContract extends React.Component{
       viewContact:PropTypes.array,
       item:PropTypes.object,
       navigateTo:PropTypes.string,
+      contractPk:PropTypes.number
     };
     static defaultProps = {
       url: 'https://klouderp.com',
       viewContact: [],
       item: null,
-      navigateTo:'NavigationScreen'
+      navigateTo:'NavigationScreen',
+      contractPk:null
     }
 
     constructor(props) {
@@ -69,7 +72,8 @@ export default class ViewNewContract extends React.Component{
          productMetaList:[],
          editProduct:null,
          createdoc:false,
-         allDocs:[]
+         allDocs:[],
+         contractPk:this.props.contractPk
       };
 
       willFocus = props.navigation.addListener(
@@ -83,14 +87,15 @@ export default class ViewNewContract extends React.Component{
     setUrl=async()=>{
       var SERVER_URL =  await AsyncStorage.getItem('SERVER_URL');
       this.setState({SERVER_URL})
-      // this.getContract()
+      this.getContract()
     }
 
-    getContract=async(query)=>{
-      var url = this.state.SERVER_URL + '/api/clientRelationships/contract/'+this.state.item.pk+'/'
+    getContract=async()=>{
+      var SERVER_URL = await AsyncStorage.getItem('SERVER_URL')
+      var url = SERVER_URL + '/api/clientRelationships/contract/'+this.state.contractPk+'/'
       var data = await HttpsClient.get(url)
+      console.log(data.data,'dsahbfb',url);
       if(data.type=='success'){
-        console.log(data.data,'dsahbfb');
         this.setState({contract:data.data,productList:JSON.parse(data.data.data),termsAndCondition:data.data.termsAndConditionTxts.split('||'),company:data.data.contact.company})
       }else{
         return
@@ -272,9 +277,9 @@ export default class ViewNewContract extends React.Component{
             <Text style={{fontSize:20,color:'#000'}}>{this.state.item.heading}</Text>
            </View>
            {
-           <TouchableOpacity onPress={()=>{this.createProduct()}} style={{justifyContent: 'center', alignItems: 'center',width:width*0.3,}}>
-              <MaterialIcons name="check" size={24} color="black" />
-           </TouchableOpacity>
+           // <TouchableOpacity onPress={()=>{this.createProduct()}} style={{justifyContent: 'center', alignItems: 'center',width:width*0.3,}}>
+           //    <MaterialIcons name="check" size={24} color="black" />
+           // </TouchableOpacity>
            }
         </View>
       )
@@ -416,6 +421,36 @@ export default class ViewNewContract extends React.Component{
     }
   }
 
+  downloadPDf=async()=>{
+    console.log('jjjjjjjjjjjjjjj');
+    var URL =  await AsyncStorage.getItem("SERVER_URL")
+    var url = URL+'/api/clientRelationships/downloadInvoice/?contract='+this.state.contractPk+'&output=true'
+    var data = await HttpsClient.get(url)
+    if(data.type=='success'){
+      this.setState({pdfurl:URL+'/'+data.data.fileUrl})
+      Linking.openURL(URL+'/'+data.data.fileUrl)
+
+
+    }else{
+      return
+    }
+
+ }
+ shareOnWhatsapp=async()=>{
+   var url =this.state.SERVER_URL+'/api/clientRelationships/downloadInvoice/?contract='+this.state.contractPk+'&output=true'
+   var data = await HttpsClient.get(url)
+   console.log(data,'fdjgkdn');
+   var fileUrl = ''
+   if(data.type=='success'){
+     this.setState({pdfurl:data.data.fileUrl})
+     fileUrl = this.state.SERVER_URL+'/'+data.data.fileUrl
+    Linking.openURL('whatsapp://send?text='+fileUrl);
+   }else{
+     return
+   }
+   // Linking.openURL('whatsapp://send?text='+this.state.pdfurl);
+ }
+
   setSelectedProduct=(item)=>{
     this.setState({selectedProduct:item,description:item.name,showProducts:false})
   }
@@ -450,7 +485,9 @@ export default class ViewNewContract extends React.Component{
                         </View>
                         <View style={{flexDirection:'row',marginTop:10}}>
                           <View style={{flex:0.7,justifyContent:'center'}}>
+                          {this.state.company!=null&&
                             <Text style={{color:'rgba(0, 0, 0, 0.5)',fontSize:16,fontWeight:'600'}}>{this.state.viewContact.company.name}</Text>
+                          }
                           </View>
                           <View style={{flex:0.3,alignItems:'flex-end',justifyContent:'center'}}>
                             <Text style={{color:'#c2c2c2',fontSize:12,fontWeight:'600'}}>({this.state.item.timeAgo})</Text>
@@ -471,13 +508,13 @@ export default class ViewNewContract extends React.Component{
                     <View style={{paddingVertical:20,}}>
                       <View style={{flexDirection:'row',paddingHorizontal:25,}}>
                         <View style={{flex:0.45}}>
-                          <TouchableOpacity onPress={()=>{}} style={{borderWidth:1,borderColor:'#f00',borderRadius:15,marginRight:5,flexDirection:'row',height:40,alignItems:'center',justifyContent:'center'}}>
+                          <TouchableOpacity onPress={()=>{this.downloadPDf()}} style={{borderWidth:1,borderColor:'#f00',borderRadius:15,marginRight:5,flexDirection:'row',height:40,alignItems:'center',justifyContent:'center'}}>
                             <AntDesign name="pdffile1" size={20} color="#f00" />
                             <Text style={{color:'#f00',fontSize:14,marginLeft:5}}>Download PDF</Text>
                           </TouchableOpacity>
                         </View>
                         <View style={{flex:0.55,}}>
-                          <TouchableOpacity onPress={()=>{}} style={{borderWidth:1,borderColor:'#378a3b',borderRadius:15,marginLeft:5,flexDirection:'row',height:40,alignItems:'center',justifyContent:'center'}}>
+                          <TouchableOpacity onPress={()=>{this.shareOnWhatsapp()}} style={{borderWidth:1,borderColor:'#378a3b',borderRadius:15,marginLeft:5,flexDirection:'row',height:40,alignItems:'center',justifyContent:'center'}}>
                             <FontAwesome name="whatsapp" size={20} color="#378a3b" />
                             <Text style={{color:'#378a3b',fontSize:14,marginLeft:5}}>Share on Whatsapp</Text>
                           </TouchableOpacity>
@@ -578,9 +615,11 @@ export default class ViewNewContract extends React.Component{
                               <Text style={{color:'#000',fontSize:15,}}>TERMS AND CONDITIONS</Text>
                             </View>
                             <View style={{flex:0.3,justifyContent:'center',alignItems:'flex-end'}}>
-                              <TouchableOpacity onPress={()=>{}} style={{height:35,alignItems:'center',justifyContent:'center'}}>
-                                <Text style={{color:'#000',fontSize:14,fontWeight:'700',borderBottomWidth:1}}>change</Text>
-                              </TouchableOpacity>
+                              {
+                              //   <TouchableOpacity onPress={()=>{}} style={{height:35,alignItems:'center',justifyContent:'center'}}>
+                              //   <Text style={{color:'#000',fontSize:14,fontWeight:'700',borderBottomWidth:1}}>change</Text>
+                              // </TouchableOpacity>
+                            }
                             </View>
                           </View>
                           {
