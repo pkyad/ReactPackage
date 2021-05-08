@@ -28,7 +28,8 @@ class OtpScreen extends Component {
         csrf:null,
         sessionid:null,
         loadingVisible:false,
-        url:''
+        url:'',
+        countryCode:null
       }
       this.otpTextInput = []
 }
@@ -42,9 +43,10 @@ componentDidMount(){
   var mobile = this.props.navigation.getParam('mobile',null)
   var csrf = this.props.navigation.getParam('csrf',null)
   var url = this.props.navigation.getParam('url',null)
+  var countryCode = this.props.navigation.getParam('countryCode',null)
 
   if(screen == 'LogInScreen'){
-    this.setState({text:'Login',screen:'login',username:username,url:url})
+    this.setState({text:'Login',screen:'login',username:username,url:url,countryCode:countryCode})
   }else{
     this.setState({text:'Register',screen:'register',username:username,mobileNo:username,url:url})
     this.setState({userPk: userPk,token:token,mobile:mobile,mobileNo:username,csrf:csrf,url:url})
@@ -70,6 +72,50 @@ renderHeader=()=>{
        </TouchableOpacity>
  </View>
   )
+}
+
+resendOtp(){
+
+    var data = new FormData();
+    console.log(this.state.url + '/generateOTP/?mobile='+this.state.username+'&countryCode='+this.state.countryCode.name,'vivkyc');
+    data.append("id", this.state.username);
+    fetch(this.state.url + '/generateOTP/?mobile='+this.state.username+'&countryCode='+this.state.countryCode.name, {
+      method: 'GET',
+    })
+      .then((response) => {
+        if (response.status == 200) {
+          try{
+            var sessionid = response.headers.get('set-cookie').split('sessionid=')[1].split(';')[0]
+          }catch(e){
+            var sessionid = null
+          }
+          console.log(response.headers,sessionid,'fdkgmjdm');
+          if(sessionid!=null){
+            this.setState({ sessionid: sessionid })
+            AsyncStorage.setItem("sessionid", sessionid)
+            return response.json()
+          }else{
+            return true
+          }
+        }else{
+          return false
+        }
+      })
+      .then((responseJson) => {
+        console.log(responseJson,'fskfgjkdmfg');
+          if (!responseJson){
+            this.getOtp()
+          }else{
+            this.refs.toast.show('OTP sent sucessfully');
+          }
+
+
+      })
+      .catch((error) => {
+        this.refs.toast.show(error.toString());
+        return
+      });
+
 }
 
 
@@ -135,6 +181,7 @@ if(this.state.screen == 'login'){
 
 verify() {
 
+
   var otp = this.state.otp
 
  if(otp.length < 4){
@@ -192,9 +239,20 @@ verify() {
      console.log('OtpScreen',this.state.sessionid,csrf,responseJson.pk)
      // this.props.navigation.navigate('DefaultScreen')
      // this.props.redirect({serverUrl:url,csrf:responseJson.csrf_token,userPk:JSON.stringify(responseJson.pk),sessionid:this.state.sessionid})
-     AsyncStorage.setItem("login", JSON.stringify(true)).then(res => {
-      return  this.props.navigation.navigate ('DefaultScreen')
-     });
+
+     if(!responseJson.newReg){
+       AsyncStorage.setItem("login", JSON.stringify(true)).then(res => {
+        return  this.props.navigation.navigate ('DefaultScreen')
+       });
+     }else{
+       AsyncStorage.setItem("login", JSON.stringify(true)).then(res => {
+        return  this.props.navigation.navigate ('RegisterScreen',{
+          division:responseJson.division,
+          pk:responseJson.pk,
+        })
+       });
+     }
+
      return
      fetch(this.state.url + '/api/HR/users/?mode=mySelf&format=json', {
        headers: {
@@ -358,7 +416,8 @@ verify() {
            <View style={{flex:1,zIndex:2,}}>
                <View style={{flex:1}}>
                  <View style={{flex:0.2,zIndex:2,flexDirection:'row',alignItems:'center',marginHorizontal:30}}>
-                    <Image style={{width:width*0.45,height:width*0.25,resizeMode:'contain'}} source={require('./Images/erplogo.png')} />
+                 <Image style={{width:50,height:50,resizeMode:'contain'}} source={require('./Images/appiconred.png')} />
+                 <Text style={{fontWeight: 'bold',fontSize: 25,color:'#000',marginLeft:10}}> Kloud ERP </Text>
                  </View>
                  <View style={{flex:0.8,zIndex:2,}}>
 
@@ -418,6 +477,8 @@ verify() {
 
 
 
+
+
                   {
                   //   <View style={{flexDirection:'row',marginTop:30}}>
                   //   <Text style={{fontSize: 14,color:'#000',}}> {`Did't receive any code?`}</Text>
@@ -436,6 +497,12 @@ verify() {
                   <TouchableOpacity onPress={()=>{this.verify()}} style={{alignItems:'center',justifyContent:'center',marginHorizontal:30,width:width-60,borderRadius:10,marginVertical:15,paddingVertical:12,backgroundColor:'#286090'}}>
                     <Text style={{fontSize:18,color:'#fff',fontWeight:'600'}}>Sign In</Text>
                   </TouchableOpacity>
+
+                  <View style={{width:width,alignItems:'flex-end'}}>
+                    <TouchableOpacity onPress={()=>{this.resendOtp()}} style={{alignItems:'center',justifyContent:'center',marginHorizontal:30,borderRadius:10,marginVertical:5,paddingVertical:10,}}>
+                      <Text style={{fontSize:18,color:'#286090',fontWeight:'600'}}>Resend OTP</Text>
+                    </TouchableOpacity>
+                   </View>
 
                  </View>
               </View>

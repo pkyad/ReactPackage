@@ -9,6 +9,8 @@ import * as Permissions from 'expo-permissions';
 import Svg, { Circle, Rect,Path,Defs,G,Mask} from 'react-native-svg';
 import Toast, {DURATION} from 'react-native-easy-toast';
 import PropTypes from 'prop-types';
+import SearchableDropdown from 'react-native-searchable-dropdown';
+import CountryCodeList from './CountryList.json';
 
 const { width,height } = Dimensions.get('window');
 
@@ -27,7 +29,10 @@ class LoginScreen extends Component {
           url:props.url,
           loader:false,
           mobileNo:'',
-          color:props.color
+          color:props.color,
+          countryCodeList:[],
+          selectedCode:null,
+          inputText:''
       }
       Keyboard.addListener('keyboardDidHide',this.showKeyboard)
       Keyboard.addListener('keyboardDidShow', this.hideKeyboard)
@@ -59,7 +64,15 @@ class LoginScreen extends Component {
     }
 
     componentDidMount(){
+      this.setCountryCode()
+    }
 
+    setCountryCode=()=>{
+      var arr = []
+      CountryCodeList.forEach((item, i) => {
+        arr.push({id:i,name:item.code,country:item.name})
+      });
+      this.setState({countryCodeList:arr})
     }
 
     getOtp() {
@@ -101,13 +114,19 @@ class LoginScreen extends Component {
     // if (this.state.mobileNo == undefined || mob.test(this.state.mobileNo) == false) {
     //   this.refs.toast.show('Enter Correct Mobile No');
     // }
+
+    if(this.state.selectedCode==null){
+      this.refs.toast.show('Select Country Code');
+      return
+    }
     if (this.state.mobileNo == undefined || this.state.mobileNo.length==0) {
       this.refs.toast.show('Enter Username or Mobile No');
     }else {
       // this.refs.toast.show('OTP request sent.');
       var data = new FormData();
+      console.log(this.state.url + '/generateOTP/?mobile='+this.state.mobileNo+'&countryCode='+this.state.selectedCode.name,'vivkyc');
       data.append("id", this.state.mobileNo);
-      fetch(this.state.url + '/generateOTP/?mobile='+this.state.mobileNo, {
+      fetch(this.state.url + '/generateOTP/?mobile='+this.state.mobileNo+'&countryCode='+this.state.selectedCode.name, {
         method: 'GET',
       })
         .then((response) => {
@@ -150,6 +169,7 @@ class LoginScreen extends Component {
                 screen:'LogInScreen',
                 url:this.state.url,
                 username:this.state.mobileNo,
+                countryCode:this.state.selectedCode
               })
               // this.props.sendOtp(true)
               return
@@ -168,6 +188,7 @@ class LoginScreen extends Component {
 
 
     logIn(){
+      console.log(this.state.url);
         this.setState({loader:true})
         var serverURL = this.state.url;
         if(this.state.needOTP == false){
@@ -328,7 +349,8 @@ class LoginScreen extends Component {
            <View style={{flex:1,zIndex:2,}}>
                <View style={{flex:1}}>
                  <View style={{flex:0.2,zIndex:2,flexDirection:'row',alignItems:'center',marginHorizontal:30}}>
-                    <Image style={{width:width*0.45,height:width*0.25,resizeMode:'contain'}} source={require('./Images/erplogo.png')} />
+                    <Image style={{width:50,height:50,resizeMode:'contain'}} source={require('./Images/appiconred.png')} />
+                    <Text style={{fontWeight: 'bold',fontSize: 25,color:'#000',marginLeft:10}}> Kloud ERP </Text>
                  </View>
                  <View style={{flex:0.8,zIndex:2,justifyContent:'flex-start'}}>
 
@@ -337,8 +359,55 @@ class LoginScreen extends Component {
                    </View>
 
                    <View style={{marginHorizontal:30,width:width-60,marginVertical:15,}}>
+
+                    <SearchableDropdown
+                      onItemSelect={(item) => {
+                        this.setState({ selectedCode: item,inputText:item.name });
+                      }}
+                      onTextChange={(item) => {
+                        this.setState({selectedCode:null });
+                      }}
+                      containerStyle={{  }}
+                      itemStyle={{
+                        padding: 10,
+                        marginTop: 2,
+                        backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                        borderColor: 'rgba(0, 0, 0, 0.1)',
+                        borderWidth: 1,
+                        borderRadius: 5,
+                      }}
+                      itemTextStyle={{ color: 'rgba(0, 0, 0, 0.5)' }}
+                      itemsContainerStyle={{ }}
+                      items={this.state.countryCodeList}
+                      defaultIndex={0}
+                      resetValue={false}
+                      textInputProps={
+                        {
+                          placeholder: "Country Code",
+                          underlineColorAndroid: "transparent",
+                          placeholderTextColor:'rgba(0, 0, 0, 0.5)',
+                          style: {
+                              paddingHorizontal: 12,
+                              height:50,
+                              borderWidth: 1,
+                              borderColor: 'rgba(0, 0, 0, 0.1)',
+                              borderRadius: 10,
+                              backgroundColor:'rgba(0, 0, 0, 0.1)',
+                              fontSize:16,
+                          },
+                        }
+                      }
+                      listProps={
+                        {
+                          nestedScrollEnabled: true,
+                        }
+                      }
+                  />
+                    </View>
+
+                   <View style={{marginHorizontal:30,width:width-60,marginVertical:15,}}>
                      <TextInput style={{height: 50,borderWidth:1,borderColor:'rgba(0, 0, 0, 0.1)',width:'100%',borderRadius:10,backgroundColor:'rgba(0, 0, 0, 0.1)',paddingHorizontal:15,fontSize:16}}
-                         placeholder="UserName / Mobile Number"
+                         placeholder="Mobile Number"
                          placeholderTextColor='rgba(0, 0, 0, 0.5)'
                          selectionColor={'#000'}
                          onChangeText={query => { this.setState({ mobileNo: query });this.setState({ username: query }) }}
@@ -347,7 +416,7 @@ class LoginScreen extends Component {
                     </View>
 
                     <TouchableOpacity onPress={()=>{this.sendOtp()}} style={{alignItems:'center',justifyContent:'center',marginHorizontal:30,width:width-60,borderRadius:10,marginVertical:15,paddingVertical:12,backgroundColor:'#286090'}}>
-                      <Text style={{fontSize:18,color:'#fff',fontWeight:'600'}}>Login</Text>
+                      <Text style={{fontSize:18,color:'#fff',fontWeight:'600'}}>Proceed</Text>
                     </TouchableOpacity>
 
                  </View>
@@ -371,7 +440,7 @@ LoginScreen.propTypes = {
 };
 
 LoginScreen.defaultProps = {
-  url: 'https://klouderp.com',
+  url: 'https://dev.klouderp.com',
   color:'#f2f2f2'
 };
 
