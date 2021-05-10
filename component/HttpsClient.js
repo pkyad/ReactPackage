@@ -81,6 +81,7 @@ const HttpsClient = {
         body: sendData
       }).then((response) => {
         var status = response.status.toString()
+
         if(status.includes('20')){
            returnData.type='success'
         }

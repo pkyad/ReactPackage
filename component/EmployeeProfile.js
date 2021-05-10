@@ -68,7 +68,7 @@ class EmployeeProfile extends React.Component{
         is_staff=item.is_staff
         activePayroll=false
         email=item.email
-        mobile=item.profile.mobile
+        mobile=item.profile.mobile!=null?item.profile.mobile:''
         reportingTo=null
         selectedRole=null
         selectedUnitList=null
@@ -113,7 +113,11 @@ class EmployeeProfile extends React.Component{
          searchList:[],
          show:false,
          selectedApp:null,
-         designation:null
+         designation:null,
+         basic:null,
+         master:null,
+         userDetails:null,
+
       };
       willFocus = props.navigation.addListener(
      'didFocus',
@@ -129,12 +133,14 @@ class EmployeeProfile extends React.Component{
     }
 
     componentDidMount=()=>{
+      this.getDetails()
       this.setUrl()
       this.getUser()
       this.getUnit()
       this.getRole()
-      this.getDetails()
+      this.getReportingMembers()
     }
+
      getUser=async()=>{
        const SERVER_URL = await AsyncStorage.getItem('SERVER_URL');
        const userToken = await AsyncStorage.getItem('userpk');
@@ -154,8 +160,8 @@ class EmployeeProfile extends React.Component{
          }
        }).then((response) => response.json())
          .then((responseJson) => {
-           if(responseJson.designation!=null){
-             this.setState({designation:responseJson.designation.pk})
+           if(responseJson != undefined){
+              this.setState({userDetails:responseJson})
            }
          })
          .catch((error) => {
@@ -164,7 +170,7 @@ class EmployeeProfile extends React.Component{
      }
 
     attachShow=async()=>{
- const { status, expires, permissions } = await Permissions.getAsync(
+    const { status, expires, permissions } = await Permissions.getAsync(
      Permissions.CAMERA_ROLL,
      Permissions.CAMERA
    );
@@ -283,39 +289,116 @@ _pickImage = async () => {
     }
 
     save=async()=>{
+     var payroll = {
+       pk:this.state.payroll.pk,
+       hra:this.state.hra,
+       lta:this.state.lta,
+       adHoc:this.state.fixedVariable,
+       special:this.state.specialAllowance,
+       basic:this.state.basicDA,
+       bonus:this.state.statutoryBonus,
+       pfAdmin:this.state.companyContribution,
+       pfAmnt:this.state.employeeContribution,
+       pTax:this.state.professionalTax,
+       al:this.state.al.length==0?null:parseInt(this.state.al),
+       ml:this.state.ml.length==0?null:parseInt(this.state.ml),
+      activatePayroll : this.state.activePayroll,
+      accountNumber : this.state.payroll.accountNumber,
+      adHocLeaves : this.state.payroll.adHocLeaves,
+      ctc : this.state.ctc,
+      bankName : this.state.payroll.bankName,
+      esic : this.state.payroll.esic,
+      ifscCode : this.state.payroll.ifscCode,
+      off : this.state.payroll.off,
+      pan : this.state.payroll.pan,
+      pfAccNo : this.state.pfAccountNo,
+      pfUniNo : this.state.universalAccountNo,
+      taxSlab : this.state.payroll.taxSlab,
+      esicAmount : this.state.payroll.esicAmount,
+      esicAdmin : this.state.payroll.esicAdmin,
+      policyNumber : this.state.payroll.policyNumber,
+      provider : this.state.payroll.provider,
+      amount : this.state.payroll.amount,
+      noticePeriodRecovery : this.state.payroll.noticePeriodRecovery,
+      notice : this.state.payroll.notice,
+      probation : this.state.payroll.probation,
+      probationNotice : this.state.payroll.probationNotice,
+     }
 
-      if(this.state.teamName.length==0){
-        this.toast.show('Enter Team Name',2000);
-        return
-      }
-      if(this.state.teamLead==null){
-        this.toast.show('Select Team Lead',2000);
-        return
-      }
-      if(this.state.selectedUnitList==null){
-        this.toast.show('Select Team Unit',2000);
-        return
-      }
+     var basic = {
+          pk:this.state.basic.pk,
+          empID : this.state.id.length==0?null:parseInt(this.state.id),
+          empType : this.state.basic.empType,
+          prefix : this.state.basic.prefix,
+          gender : this.state.basic.gender,
+          permanentAddressStreet : this.state.basic.permanentAddressStreet,
+          permanentAddressCity : this.state.basic.permanentAddressCity,
+          permanentAddressPin : this.state.basic.permanentAddressPin,
+          permanentAddressState : this.state.basic.permanentAddressState,
+          permanentAddressCountry : this.state.basic.permanentAddressCountry,
+          sameAsLocal : this.state.basic.sameAsLocal,
+          localAddressStreet : this.state.basic.localAddressStreet,
+          localAddressCity : this.state.basic.localAddressCity,
+          localAddressPin : this.state.basic.localAddressPin,
+          localAddressState : this.state.basic.localAddressState,
+          localAddressCountry : this.state.basic.localAddressCountry,
+          emergency : this.state.basic.emergency,
+          bloodGroup : this.state.basic.bloodGroup,
+          website : this.state.basic.website,
+          almaMater : this.state.basic.almaMater,
+          pgUniversity : this.state.basic.pgUniversity,
+          docUniversity : this.state.basic.docUniversity,
+          fathersName : this.state.basic.fathersName,
+          mothersName : this.state.basic.mothersName,
+          wifesName : this.state.basic.wifesName,
+          wifesName : this.state.basic.wifesName,
+          childCSV : this.state.basic.childCSV,
+          note1 : this.state.basic.note1,
+          note2 : this.state.basic.note2,
+          note3 : this.state.basic.note3,
+          mobile : this.state.mobile,
+          email : this.state.email,
+     }
+
+     var designation = {
+       pk:this.state.designation.pk,
+     }
+
+     if(this.state.selectedRole!=null){
+       designation.role = this.state.selectedRole.value
+     }
+     if(this.state.selectedUnitList!=null){
+       designation.unit = this.state.selectedUnitList.value
+     }
+     if(this.state.reportingTo!=null){
+       designation.reportingTo = this.state.reportingTo.value
+     }
+
+     var master = {
+       pk:this.state.master.pk,
+       email : this.state.email,
+       first_name : this.state.first_name,
+       last_name : this.state.last_name,
+       is_active : this.state.master.is_active,
+       is_staff : this.state.is_staff,
+       username : this.state.master.username,
+     }
 
       var sendData = {
-        isOnSupport:this.state.isSupport,
-        manager:this.state.teamLead.pk,
-        title:this.state.teamName,
-        unit:this.state.selectedUnitList.value,
+        payroll:payroll,
+        basic:basic,
+        master:master,
+        designation:designation,
       }
 
 
-      if(this.state.editItem!=null){
-        var serverurl =url + '/api/HR/team/'+this.state.editItem.pk+'/'
-        var data = await HttpsClient.patch(serverurl,sendData)
-      }else{
-        var serverurl =url + '/api/HR/team/'
+
+        var serverurl =url + '/api/HR/updatePayrollDesignationMasterAcc/'
         var data = await HttpsClient.post(serverurl,sendData)
-      }
       // return
 
 
-
+      console.log(sendData,serverurl,data);
       if(data.type=='success'){
         this.props.navigation.goBack()
       }else{
@@ -337,7 +420,18 @@ _pickImage = async () => {
         });
         this.setState({unitList:arr})
         if(arr.length>0){
-          this.setState({selectedUnitList:arr[0]})
+          if(this.state.designation != null){
+            var unit = this.state.designation.unit;
+            if(unit != null){
+              unit = {label:unit.name,value:unit.pk}
+              this.setState({selectedUnitList:unit})
+            }else{
+              this.setState({selectedUnitList:arr[0]})
+            }
+          }else{
+            this.setState({selectedUnitList:arr[0]})
+          }
+
         }
       }else{
         return
@@ -349,12 +443,13 @@ _pickImage = async () => {
       var serverurl =url + '/api/HR/updatePayrollDesignationMasterAcc/?id='+this.state.item.pk
       var data = await HttpsClient.get(serverurl)
 
-      console.log('dfbsbn',data,serverurl);
+      console.log('dfbsbn',data.data.designation,serverurl);
       if(data.type=='success'){
         var payroll = data.data.payroll
         var apps = data.data.apps
         apps.push({pk:undefined})
-        this.setState({payroll:payroll,hra:payroll.hra,specialAllowance:payroll.special,lta:payroll.lta,activePayroll:payroll.activatePayroll,basicDA:payroll.basic,fixedVariable:payroll.adHoc,statutoryBonus:payroll.bonus,companyContribution:payroll.pfAdmin,employeeContribution:payroll.pfAmnt,professionalTax:payroll.pTax,ctc:payroll.ctc,apps:apps})
+        this.setState({basic:data.data.basic,designation:data.data.designation,master:data.data.master,payroll:payroll,hra:payroll.hra!=null?payroll.hra:'',specialAllowance:payroll.special!=null?payroll.special:'',lta:payroll.lta!=null?payroll.lta:'',activePayroll:payroll.activatePayroll,basicDA:payroll.basic!=null?payroll.basic:'',fixedVariable:payroll.adHoc!=null?payroll.adHoc:'',statutoryBonus:payroll.bonus!=null?payroll.bonus:'',companyContribution:payroll.pfAdmin!=null?payroll.pfAdmin:'',employeeContribution:payroll.pfAmnt!=null?payroll.pfAmnt:'',professionalTax:payroll.pTax!=null?payroll.pTax:'',ctc:payroll.ctc,apps:apps,
+        pfAccountNo:payroll.pfAccNo!=null?payroll.pfAccNo:'',universalAccountNo:payroll.pfUniNo!=null?payroll.pfUniNo:'',})
       }else{
         return
       }
@@ -373,7 +468,58 @@ _pickImage = async () => {
         });
         this.setState({roleList:arr})
         if(arr.length>0){
-          this.setState({selectedRole:arr[0]})
+          if(this.state.designation != null){
+            var role = this.state.designation.role;
+            if(role != null){
+              role = {label:role.name,value:role.pk}
+              this.setState({selectedRole:role})
+            }else{
+              this.setState({selectedRole:arr[0]})
+            }
+          }else{
+            this.setState({selectedRole:arr[0]})
+          }
+        }
+      }else{
+        return
+      }
+    }
+    sendRemainder=async()=>{
+      const userToken = await AsyncStorage.getItem('userpk');
+      var sendData = {user:userToken}
+      var serverurl =url + '/api/HR/sendWelcomeKit/?user='+userToken;
+      var data = await HttpsClient.get(serverurl)
+
+      if(data.type=='success'){
+        return
+      }else{
+        return
+      }
+    }
+    getReportingMembers=async()=>{
+
+      var serverurl =url + '/api/HR/users/?is_active=true&division='
+      var data = await HttpsClient.get(serverurl)
+
+      if(data.type=='success'){
+        var arr = []
+        data.data.forEach((item, i) => {
+          var obj = {label:item.first_name+' '+item.last_name,value:item.pk}
+          arr.push(obj)
+        });
+        this.setState({reportingToList:arr})
+        if(arr.length>0){
+          if(this.state.designation != null){
+            var reportingTo = this.state.designation.reportingTo;
+            if(reportingTo != null){
+              reportingTo = {label:reportingTo.first_name+' '+reportingTo.last_name,value:reportingTo.pk}
+              this.setState({reportingTo:reportingTo})
+            }else{
+              this.setState({reportingTo:arr[0]})
+            }
+          }else{
+            this.setState({reportingTo:arr[0]})
+          }
         }
       }else{
         return
@@ -570,8 +716,31 @@ _pickImage = async () => {
     }else{
       return
     }
-
   }
+
+  calculateCTCAmount=async()=>{
+      console.log(this.state.hra,this.state.ctc,typeof(this.state.ctc));
+      var hra = 0.4 * this.state.ctc;
+      var professionalTax = 2400;
+      var basicDA = 0.1* this.state.ctc;
+      var statutoryBonus = 0.1* this.state.ctc;
+      var fixedVariable = 0.2* this.state.ctc;
+      var employeeContribution = 0.015* this.state.ctc;
+      var companyContribution = 0.015* this.state.ctc;
+      var specialAllowance = 0.1*this.state.ctc
+      var lta = 0.1* this.state.ctc;
+      this.setState({hra,professionalTax,basicDA,statutoryBonus,fixedVariable,employeeContribution,companyContribution,specialAllowance,lta})
+      this.calculateCTC();
+    }
+
+
+
+ calculateCTC = async()=> {
+    var ctc = parseInt(this.state.employeeContribution) + parseInt(this.state.companyContribution) + parseInt(this.state.professionalTax) +parseInt( this.state.fixedVariable )+ parseInt(this.state.statutoryBonus) + parseInt(this.state.basicDA) + parseInt(this.state.hra) + parseInt(this.state.lta) +parseInt(this.state.specialAllowance);
+    this.setState({ctc})
+    }
+
+
     render(){
         return(
           <View style={{flex:1,backgroundColor:"#fff"}}>
@@ -707,7 +876,7 @@ _pickImage = async () => {
                            placeholder="First Name"
                            selectionColor={'#000'}
                            placeholderTextColor='rgba(0, 0, 0, 0.5)'
-                           onChangeText={query => { this.setState({first_name:item})}}
+                           onChangeText={query => { this.setState({first_name:query})}}
                            value={this.state.first_name}
                           />
                     </View>
@@ -755,6 +924,24 @@ _pickImage = async () => {
 
                   <View style={{flexDirection:'row',paddingVertical:15,paddingHorizontal:20,}}>
                      <View style={{paddingRight:7,flex:1}}>
+                       <Text style={{color:"#000",fontWeight:'700',fontSize:16,paddingBottom:10}}>Reporting To </Text>
+                        <DropDownPicker
+                         items={this.state.reportingToList}
+                         dropDownStyle={{backgroundColor:'#F3F6FB',borderWidth:1,marginTop:2,borderColor:'#F3F6FB'}}
+                         defaultValue={this.state.reportingTo!=undefined?this.state.reportingTo.value:null}
+                         placeholder="Reporting To "
+                         arrowColor={'#000'}
+                         dropDownMaxHeight={width*0.5}
+                         style={{backgroundColor:'#F3F6FB',borderWidth:1,borderColor:'#F3F6FB',borderRadius:15}}
+                         placeholderStyle={{fontWeight: 'bold',color:'#000'}}
+                         labelStyle={{fontSize: 16, color: '#000',}}
+                         containerStyle={{height: 45,width:'100%',borderRadius:15}}
+                         onChangeItem={item =>{ this.setState({reportingTo:item})}}
+                         />
+                     </View>
+                  </View>
+                  <View style={{flexDirection:'row',paddingVertical:15,paddingHorizontal:20,}}>
+                     <View style={{paddingRight:7,flex:1}}>
                        <Text style={{color:"#000",fontWeight:'700',fontSize:16,paddingBottom:10}}>Work Location</Text>
                         <DropDownPicker
                          items={this.state.unitList}
@@ -793,6 +980,18 @@ _pickImage = async () => {
                   <View style={{}}>
                   <View style={{marginTop:30,marginHorizontal:25,marginVertical:10,}}>
                    <Text style={{color:"grey",fontWeight:'700',fontSize:16,paddingBottom:10}}>CTC</Text>
+
+                   {this.state.activePayroll&&<View style={{backgroundColor:'#E8C300',marginVertical:10,borderRadius:15,paddingVertical:10,paddingHorizontal:15,alignItems:'flex-start',justifyContent:'flex-start'}}>
+                    <Text style={{color:"#fff",fontWeight:'600',fontSize:18,lineHeight:30}}>{this.state.ctc} is above the income tax slab of 2,50,000, Please fill the CTC breakup instead in the below form. or You can autocalculate by clicking</Text>
+                    <TouchableOpacity onPress={() => {this.calculateCTCAmount()}} style={{paddingVertical:5,paddingHorizontal:10,backgroundColor:'#2C5AA7',alignItems:'center',justifyContent:'center',marginTop:10,borderRadius:10}}>
+                       <Text style={{color:"#fff",fontWeight:'600',fontSize:18,lineHeight:30}}>Auto Calculate</Text>
+                    </TouchableOpacity>
+                    <Text style={{color:"#fff",fontWeight:'600',fontSize:18,lineHeight:30}}> or re enter the CTC again by clicking</Text>
+                    <TouchableOpacity onPress={() => {this.setState({activePayroll:false})}} style={{paddingVertical:5,paddingHorizontal:10,backgroundColor:'#00BB29',alignItems:'center',justifyContent:'center',marginTop:10,borderRadius:10}}>
+                       <Text style={{color:"#fff",fontWeight:'600',fontSize:18,lineHeight:30}}>Re-Enter</Text>
+                    </TouchableOpacity>
+                   </View>}
+
                    <Text style={{color:"#000",fontWeight:'700',fontSize:16,paddingBottom:10}}>HRA</Text>
                    <View style={{flexDirection:'row',}}>
                         <TextInput style={{height: 50,borderWidth:1,borderColor:'#F3F6FB',width:'100%',borderRadius:10,backgroundColor:'#F3F6FB',paddingHorizontal:15,fontSize:16}}
@@ -925,36 +1124,39 @@ _pickImage = async () => {
                 </View>
               }
 
-                <View style={{}}>
-                  <View style={{marginTop:30,marginHorizontal:25,marginVertical:10,}}>
-                   <Text style={{color:"grey",fontWeight:'700',fontSize:16,paddingBottom:10}}>PF Details</Text>
-                   <Text style={{color:"#000",fontWeight:'700',fontSize:16,paddingBottom:10}}>PF Universal Account Number</Text>
-                   <View style={{flexDirection:'row',}}>
-                        <TextInput style={{height: 50,borderWidth:1,borderColor:'#F3F6FB',width:'100%',borderRadius:10,backgroundColor:'#F3F6FB',paddingHorizontal:15,fontSize:16}}
-                          placeholder="PF Universal Account Number"
-                          selectionColor={'#000'}
-                          placeholderTextColor='rgba(0, 0, 0, 0.5)'
-                          onChangeText={query => { this.setState({universalAccountNo:query})}}
-                          value={this.state.universalAccountNo.toString()}
-                          keyboardType={'numeric'}
-                         />
-                   </View>
-                  </View>
+              <View style={{}}>
+                <View style={{marginTop:30,marginHorizontal:25,marginVertical:10,}}>
+                 <Text style={{color:"grey",fontWeight:'700',fontSize:16,paddingBottom:10}}>PF Details</Text>
+                 <Text style={{color:"#000",fontWeight:'700',fontSize:16,paddingBottom:10}}>PF Universal Account Number</Text>
+                 <View style={{flexDirection:'row',}}>
+                      <TextInput style={{height: 50,borderWidth:1,borderColor:'#F3F6FB',width:'100%',borderRadius:10,backgroundColor:'#F3F6FB',paddingHorizontal:15,fontSize:16}}
+                        placeholder="PF Universal Account Number"
+                        selectionColor={'#000'}
+                        placeholderTextColor='rgba(0, 0, 0, 0.5)'
+                        onChangeText={query => { this.setState({universalAccountNo:query})}}
+                        value={this.state.universalAccountNo.toString()}
+                        keyboardType={'numeric'}
+                       />
+                 </View>
+                </View>
 
-                  <View style={{marginHorizontal:25,marginVertical:10}}>
-                    <Text style={{color:"#000",fontWeight:'700',fontSize:16,paddingBottom:10}}>PF Account Number</Text>
-                    <View style={{flexDirection:'row',}}>
-                         <TextInput style={{height: 50,borderWidth:1,borderColor:'#F3F6FB',width:'100%',borderRadius:10,backgroundColor:'#F3F6FB',paddingHorizontal:15,fontSize:16}}
-                           placeholder="PF Account Number"
-                           selectionColor={'#000'}
-                           placeholderTextColor='rgba(0, 0, 0, 0.5)'
-                           onChangeText={query => { this.setState({pfAccountNo:query})}}
-                           value={this.state.pfAccountNo.toString()}
-                           keyboardType={'numeric'}
-                          />
-                    </View>
+                <View style={{marginHorizontal:25,marginVertical:10}}>
+                  <Text style={{color:"#000",fontWeight:'700',fontSize:16,paddingBottom:10}}>PF Account Number</Text>
+                  <View style={{flexDirection:'row',}}>
+                       <TextInput style={{height: 50,borderWidth:1,borderColor:'#F3F6FB',width:'100%',borderRadius:10,backgroundColor:'#F3F6FB',paddingHorizontal:15,fontSize:16}}
+                         placeholder="PF Account Number"
+                         selectionColor={'#000'}
+                         placeholderTextColor='rgba(0, 0, 0, 0.5)'
+                         onChangeText={query => { this.setState({pfAccountNo:query})}}
+                         value={this.state.pfAccountNo.toString()}
+                         keyboardType={'numeric'}
+                        />
                   </View>
                 </View>
+              </View>
+
+
+
 
                 <View style={{}}>
                   <View style={{marginTop:30,marginHorizontal:25,marginVertical:10,}}>
@@ -987,6 +1189,12 @@ _pickImage = async () => {
                   </View>
                 </View>
 
+                <View style={{backgroundColor:'#E8C300',marginVertical:10,borderRadius:15,paddingVertical:10,paddingHorizontal:15,marginHorizontal:25,alignItems:'flex-start',justifyContent:'center'}}>
+                 <Text style={{color:"#fff",fontWeight:'600',fontSize:18,lineHeight:30}}>{this.state.userDetails != null ? this.state.userDetails.first_name + ' ' + this.state.userDetails.last_name : ''} has not filled the Onboarding Form yet, Would you like to send him a reminder ? Please click</Text>
+                 <TouchableOpacity onPress={() => {this.sendRemainder()}} style={{paddingVertical:5,paddingHorizontal:10,backgroundColor:'#2C5AA7',alignItems:'center',justifyContent:'center',marginTop:10,borderRadius:10}}>
+                    <Text style={{color:"#fff",fontWeight:'600',fontSize:18,lineHeight:30}}>Send Remainder</Text>
+                 </TouchableOpacity>
+                </View>
 
 
                   {this.renderFooter()}
@@ -1065,3 +1273,34 @@ _pickImage = async () => {
    });
 
   export default EmployeeProfile
+
+  // <View style={{}}>
+  //   <View style={{marginTop:30,marginHorizontal:25,marginVertical:10,}}>
+  //    <Text style={{color:"grey",fontWeight:'700',fontSize:16,paddingBottom:10}}>PF Details</Text>
+  //    <Text style={{color:"#000",fontWeight:'700',fontSize:16,paddingBottom:10}}>PF Universal Account Number</Text>
+  //    <View style={{flexDirection:'row',}}>
+  //         <TextInput style={{height: 50,borderWidth:1,borderColor:'#F3F6FB',width:'100%',borderRadius:10,backgroundColor:'#F3F6FB',paddingHorizontal:15,fontSize:16}}
+  //           placeholder="PF Universal Account Number"
+  //           selectionColor={'#000'}
+  //           placeholderTextColor='rgba(0, 0, 0, 0.5)'
+  //           onChangeText={query => { this.setState({universalAccountNo:query})}}
+  //           value={this.state.universalAccountNo.toString()}
+  //           keyboardType={'numeric'}
+  //          />
+  //    </View>
+  //   </View>
+  //
+  //   <View style={{marginHorizontal:25,marginVertical:10}}>
+  //     <Text style={{color:"#000",fontWeight:'700',fontSize:16,paddingBottom:10}}>PF Account Number</Text>
+  //     <View style={{flexDirection:'row',}}>
+  //          <TextInput style={{height: 50,borderWidth:1,borderColor:'#F3F6FB',width:'100%',borderRadius:10,backgroundColor:'#F3F6FB',paddingHorizontal:15,fontSize:16}}
+  //            placeholder="PF Account Number"
+  //            selectionColor={'#000'}
+  //            placeholderTextColor='rgba(0, 0, 0, 0.5)'
+  //            onChangeText={query => { this.setState({pfAccountNo:query})}}
+  //            value={this.state.pfAccountNo.toString()}
+  //            keyboardType={'numeric'}
+  //           />
+  //     </View>
+  //   </View>
+  // </View>

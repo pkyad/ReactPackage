@@ -39,7 +39,8 @@ class RegisterScreen extends Component {
 
   setUrl=async()=>{
     const SERVER_URL = await AsyncStorage.getItem('SERVER_URL');
-    this.setState({SERVER_URL:SERVER_URL})
+    const mobile = await AsyncStorage.getItem('userMobile');
+    this.setState({SERVER_URL:SERVER_URL,mobile:JSON.parse(mobile)})
   }
 
 saveDetails=async()=>{
@@ -111,6 +112,36 @@ saveDetails=async()=>{
      //    console.log(error)
      // });
   }
+
+  logout = ()=>{
+   Alert.alert(
+       'Log out',
+       'Do you want to logout?',
+       [
+         {text: 'Cancel', onPress: () => {
+           // this.props.navigation.
+
+           return null
+         }},
+         {text: 'Confirm', onPress: () => {
+           AsyncStorage.clear();
+           AsyncStorage.setItem("login", JSON.stringify(false))
+           this.setState({login:false})
+           // this.getUserAsync()
+           // this.props.navigation.setParams({  });
+
+           this.props.navigation.navigate('Login',{'login':false})
+           // this.props.navigation.navigate('Main', {'login':false}, NavigationActions.navigate({ routeName: 'Courses' }))
+           // const navigateAction = NavigationActions.navigate({ routeName: 'Courses' });
+           // this.props.navigation.closeDrawer();
+           // this.props.navigation.dispatch(navigateAction);
+           // this.props.navigation.closeDrawer();
+         }},
+       ],
+       { cancelable: false }
+     )
+ }
+
 
   attachShow=async()=>{
    const { status, expires, permissions } = await Permissions.getAsync(
@@ -253,6 +284,7 @@ modalAttach =async (event) => {
                          onChangeText={query => { this.setState({ mobile: query }) }}
                          value ={this.state.mobile.toString()}
                          keyboardType={'numeric'}
+                         editable={false}
                       />
                     </View>
 

@@ -235,6 +235,7 @@ verify() {
      AsyncStorage.setItem("SERVER_URL", this.state.url)
      AsyncStorage.setItem("csrf", responseJson.csrf_token)
      AsyncStorage.setItem("userpk", JSON.stringify(responseJson.pk))
+     AsyncStorage.setItem("userMobile", JSON.stringify(this.state.username))
      console.log(responseJson,'kkkkkkkkkkkkkkkkkkkkkkkkkk ');
      console.log('OtpScreen',this.state.sessionid,csrf,responseJson.pk)
      // this.props.navigation.navigate('DefaultScreen')

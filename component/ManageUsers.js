@@ -143,12 +143,14 @@ class ManageUsers extends React.Component {
               </View>
 
               <View style={{flexDirection:'row',marginBottom:30}}>
-                <View style={{flex:0.3,alignItems:'center',justifyContent:'center'}}>
-                  <TouchableOpacity onPress={()=>{this.props.navigation.navigate('EmployeeList')}} style={{flexDirection:'row',backgroundColor:'#CACBC5',height:45,alignItems:'center',paddingHorizontal:15,borderRadius:10}}>
-                    <FontAwesome name="cloud-download"  size={24} color="#000" />
-                  </TouchableOpacity>
-                </View>
-                <View style={{flex:0.7,alignItems:'center',justifyContent:'center',}}>
+                {
+                //   <View style={{flex:0.3,alignItems:'center',justifyContent:'center'}}>
+                //   <TouchableOpacity onPress={()=>{this.props.navigation.navigate('EmployeeList')}} style={{flexDirection:'row',backgroundColor:'#CACBC5',height:45,alignItems:'center',paddingHorizontal:15,borderRadius:10}}>
+                //     <FontAwesome name="cloud-download"  size={24} color="#000" />
+                //   </TouchableOpacity>
+                // </View>
+              }
+                <View style={{flex:1,alignItems:'center',justifyContent:'center',}}>
                   <TouchableOpacity onPress={()=>{this.props.navigation.navigate('NewEmployee')}} style={{flexDirection:'row',backgroundColor:'#CACBC5',height:45,alignItems:'center',paddingHorizontal:15,borderRadius:10}}>
                     <Feather name="user-plus" size={24} color="#393939" />
                     <Text style={{color:'#393939',fontSize:18,fontWeight:'600',paddingHorizontal:4,paddingLeft:10}}>Add New Employee</Text>

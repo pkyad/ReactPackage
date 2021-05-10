@@ -1,4 +1,4 @@
-const url = 'https://dev.klouderp.com'
+const url = 'https://klouderp.com'
 
 export default {
   url,

@@ -440,7 +440,7 @@ LoginScreen.propTypes = {
 };
 
 LoginScreen.defaultProps = {
-  url: 'https://dev.klouderp.com',
+  url: 'https://klouderp.com',
   color:'#f2f2f2'
 };
 
