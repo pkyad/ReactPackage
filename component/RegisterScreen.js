@@ -244,7 +244,7 @@ modalAttach =async (event) => {
                <View style={{flex:1}}>
                   <View style={{height:height*0.15,zIndex:2,flexDirection:'row',alignItems:'center',marginHorizontal:30}}>
                     <Image style={{width:50,height:50,resizeMode:'contain'}} source={require('./Images/appiconred.png')} />
-                    <Text style={{fontWeight: 'bold',fontSize: 25,color:'#000',marginLeft:10}}> Kloud ERP </Text>
+                    <Text style={{fontWeight: 'bold',fontSize: 25,color:'#000',marginLeft:10}}> KloudERP </Text>
                  </View>
                   <View style={{height:height*0.15,zIndex:2,alignItems:'center',marginHorizontal:30}}>
                     <Text style={{fontWeight: '600',fontSize: 20,color:'grey',marginLeft:10,lineHeight:30}}>Hello there, need few more information to setup your account with us. </Text>

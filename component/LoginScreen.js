@@ -3,16 +3,23 @@ import React, { Component }  from 'react';
 import { Alert, ScrollView, StyleSheet, View, Text, TextInput, Picker,StatusBar, TouchableHighlight,TouchableOpacity, ImageBackground, Image,AsyncStorage,Keyboard,Linking,PermissionsAndroid,ToastAndroid,Dimensions,ActivityIndicator} from 'react-native';
 import { StackNavigator } from 'react-navigation';
 import Constants from 'expo-constants';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome ,AntDesign} from '@expo/vector-icons';
 import * as Expo from 'expo';
 import * as Permissions from 'expo-permissions';
-import Svg, { Circle, Rect,Path,Defs,G,Mask} from 'react-native-svg';
+import * as Svg from 'react-native-svg';
 import Toast, {DURATION} from 'react-native-easy-toast';
 import PropTypes from 'prop-types';
 import SearchableDropdown from 'react-native-searchable-dropdown';
 import CountryCodeList from './CountryList.json';
+import CountryCodes from './country-by-calling-code.json';
+import CountryFlags from './country-by-flag.json';
+import base64 from 'react-native-base64'
+
 
 const { width,height } = Dimensions.get('window');
+const { Circle, Rect , SvgXml } = Svg;
+
+
 
 class LoginScreen extends Component {
 
@@ -32,7 +39,13 @@ class LoginScreen extends Component {
           color:props.color,
           countryCodeList:[],
           selectedCode:null,
-          inputText:''
+          inputText:'',
+          countryCodeArr:CountryCodes,
+          countryFlagArr:CountryFlags,
+          selectedCountry:CountryCodes[0],
+          selectedFlag:CountryFlags[0],
+          selectCountry:false
+
       }
       Keyboard.addListener('keyboardDidHide',this.showKeyboard)
       Keyboard.addListener('keyboardDidShow', this.hideKeyboard)
@@ -65,14 +78,33 @@ class LoginScreen extends Component {
 
     componentDidMount(){
       this.setCountryCode()
+      // this.setState({selectedCountry:this.state.countryCodeArr[0],selectedFlag:this.state.countryFlagArr[0]})
+      console.log(`data:image\/svg+xml;base64,${base64.decode(this.state.selectedFlag.flag_base64.split(',')[1])}`,'jjjjj')
     }
 
     setCountryCode=()=>{
       var arr = []
-      CountryCodeList.forEach((item, i) => {
-        arr.push({id:i,name:item.code,country:item.name})
+      this.state.countryCodeArr.forEach((item, i) => {
+        var name = item.calling_code!=null?item.calling_code.toString():''
+        arr.push({id:i,name:name,country:item.country})
       });
       this.setState({countryCodeList:arr})
+    }
+
+    selectCountryCode=(item)=>{
+      this.setState({ selectedCode: item,inputText:item.name, });
+      var index = null
+      this.state.countryFlagArr.forEach((j, i) => {
+        if(j.country==item.country){
+          index = i
+        }
+      });
+      if(index!=null){
+        this.setState({selectedFlag:this.state.countryFlagArr[index],selectCountry:true,})
+      }else{
+        this.setState({selectCountry:false,})
+      }
+
     }
 
     getOtp() {
@@ -337,6 +369,8 @@ class LoginScreen extends Component {
     )
   }
 
+
+
   render(){
      if(!this.state.loader){
      return (
@@ -350,7 +384,7 @@ class LoginScreen extends Component {
                <View style={{flex:1}}>
                  <View style={{flex:0.2,zIndex:2,flexDirection:'row',alignItems:'center',marginHorizontal:30}}>
                     <Image style={{width:50,height:50,resizeMode:'contain'}} source={require('./Images/appiconred.png')} />
-                    <Text style={{fontWeight: 'bold',fontSize: 25,color:'#000',marginLeft:10}}> Kloud ERP </Text>
+                    <Text style={{fontWeight: 'bold',fontSize: 25,color:'#000',marginLeft:10}}> KloudERP </Text>
                  </View>
                  <View style={{flex:0.8,zIndex:2,justifyContent:'flex-start'}}>
 
@@ -358,11 +392,12 @@ class LoginScreen extends Component {
                       <Text style={{fontWeight: 'bold',fontSize: 25,color:'#000'}}> Login </Text>
                    </View>
 
-                   <View style={{marginHorizontal:30,width:width-60,marginVertical:15,}}>
+                     <View style={{marginHorizontal:30,width:width-60,marginVertical:15,}}>
 
                     <SearchableDropdown
                       onItemSelect={(item) => {
-                        this.setState({ selectedCode: item,inputText:item.name });
+                        this.selectCountryCode(item)
+
                       }}
                       onTextChange={(item) => {
                         this.setState({selectedCode:null });
@@ -386,6 +421,7 @@ class LoginScreen extends Component {
                           placeholder: "Country Code",
                           underlineColorAndroid: "transparent",
                           placeholderTextColor:'rgba(0, 0, 0, 0.5)',
+                          keyboardType:'numeric',
                           style: {
                               paddingHorizontal: 12,
                               height:50,
@@ -405,14 +441,22 @@ class LoginScreen extends Component {
                   />
                     </View>
 
-                   <View style={{marginHorizontal:30,width:width-60,marginVertical:15,}}>
-                     <TextInput style={{height: 50,borderWidth:1,borderColor:'rgba(0, 0, 0, 0.1)',width:'100%',borderRadius:10,backgroundColor:'rgba(0, 0, 0, 0.1)',paddingHorizontal:15,fontSize:16}}
-                         placeholder="Mobile Number"
-                         placeholderTextColor='rgba(0, 0, 0, 0.5)'
-                         selectionColor={'#000'}
-                         onChangeText={query => { this.setState({ mobileNo: query });this.setState({ username: query }) }}
-                         value={this.state.mobileNo}
-                      />
+                   <View style={{marginHorizontal:30,width:width-60,marginVertical:15,flexDirection:'row'}}>
+                  { this.state.selectCountry&&<TouchableOpacity style={{flex:0.2,alignItems:'center',justifyContent:'center',height: 50,borderRightWidth:1,width:'100%',borderTopLeftRadius:10,borderBottomLeftRadius:10,backgroundColor:'rgba(0, 0, 0, 0.1)',borderColor:'#f2f2f2',flexDirection:'row'}}>
+                      {this.state.selectedFlag!=null&&this.state.selectedFlag.flag_base64!=null&&
+                        <SvgXml height={20} width={35} xml={`data:image/svg+xml;base64,${base64.decode(this.state.selectedFlag.flag_base64.split(',')[1])}`} />
+                      }
+                    </TouchableOpacity>}
+                    <View style={{flex:this.state.selectCountry?0.8:1}}>
+                    <TextInput style={{height: 50,borderWidth:1,borderColor:'rgba(0, 0, 0, 0.1)',width:'100%',borderTopRightRadius:10,borderBottomRightRadius:10,borderTopLeftRadius:this.state.selectCountry?0:10,borderBottomLeftRadius:this.state.selectCountry?0:10,backgroundColor:'rgba(0, 0, 0, 0.1)',paddingHorizontal:15,fontSize:16}}
+                        placeholder="Mobile Number"
+                        placeholderTextColor='rgba(0, 0, 0, 0.5)'
+                        selectionColor={'#000'}
+                        onChangeText={query => { this.setState({ mobileNo: query });this.setState({ username: query }) }}
+                        value={this.state.mobileNo}
+                     />
+                    </View>
+
                     </View>
 
                     <TouchableOpacity onPress={()=>{this.sendOtp()}} style={{alignItems:'center',justifyContent:'center',marginHorizontal:30,width:width-60,borderRadius:10,marginVertical:15,paddingVertical:12,backgroundColor:'#286090'}}>

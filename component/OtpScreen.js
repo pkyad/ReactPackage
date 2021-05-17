@@ -418,7 +418,7 @@ verify() {
                <View style={{flex:1}}>
                  <View style={{flex:0.2,zIndex:2,flexDirection:'row',alignItems:'center',marginHorizontal:30}}>
                  <Image style={{width:50,height:50,resizeMode:'contain'}} source={require('./Images/appiconred.png')} />
-                 <Text style={{fontWeight: 'bold',fontSize: 25,color:'#000',marginLeft:10}}> Kloud ERP </Text>
+                 <Text style={{fontWeight: 'bold',fontSize: 25,color:'#000',marginLeft:10}}> KloudERP </Text>
                  </View>
                  <View style={{flex:0.8,zIndex:2,}}>
 

@@ -23,6 +23,8 @@ import Toast, {DURATION} from 'react-native-easy-toast';
 import PropTypes from 'prop-types';
 const { width,height } = Dimensions.get('window');
 
+import i18n from 'i18n-js';
+import * as Localization from 'expo-localization';
 
 
 class ContactCreation extends React.Component{
@@ -120,15 +122,22 @@ class ContactCreation extends React.Component{
          state:state,
          country:country,
          data:data,
-         isCompany:isCompany
+         isCompany:isCompany,
+         bool:false,
       };
       willFocus = props.navigation.addListener(
      'didFocus',
        payload => {
-
+          this.changeVal()
          }
       );
   }
+
+  changeVal=()=>{
+     this.setState({bool:!this.state.bool},()=>{
+       this.setState({bool:true})
+     })
+   }
 
   clearData=(item)=>{
     if(!this.state.edit){
@@ -226,7 +235,7 @@ class ContactCreation extends React.Component{
            </View>
            {!this.state.contactSaved&&
             <TouchableOpacity onPress={()=>{this.save()}} style={{justifyContent: 'center', alignItems: 'center',width:width*0.15,}}>
-              <MaterialIcons name="check" size={24} color="black" />
+              <Text style={{fontSize:18,color:'#07823c'}}>Save</Text>
             </TouchableOpacity>
            }
        </View>
@@ -407,14 +416,14 @@ class ContactCreation extends React.Component{
                 }}>
 
                  <View style={{marginTop:30,marginHorizontal:25,marginVertical:10,}}>
-                  <Text style={{color:'#000',fontSize:16,paddingBottom:10}}>Name</Text>
+                  <Text style={{color:'#000',fontSize:16,paddingBottom:10}}>{i18n.t('name')}</Text>
                   <View style={{flexDirection:'row',}}>
                     <View style={{flex:0.15,alignItems:'center',justifyContent:'center',backgroundColor:'rgba(0, 0, 0, 0.1)',borderTopLeftRadius:10,borderBottomLeftRadius:10,}}>
                       <Feather name="user" size={20} color="black" />
                     </View>
                     <View style={{flex:0.85,alignItems:'center',justifyContent:'center',}}>
                        <TextInput style={{height: 50,borderWidth:1,borderColor:'rgba(0, 0, 0, 0.1)',width:'100%',borderTopRightRadius:10,borderBottomRightRadius:10,backgroundColor:'#fff',paddingHorizontal:15,fontSize:16}}
-                           placeholder="Name"
+                           placeholder={i18n.t('name')}
                            placeholderTextColor='rgba(0, 0, 0, 0.5)'
                            selectionColor={'#000'}
                            onChangeText={query => { this.setState({ firstName: query }); }}
@@ -426,14 +435,14 @@ class ContactCreation extends React.Component{
                 </View>
 
                   <View style={{marginHorizontal:25,marginVertical:10,}}>
-                    <Text style={{color:'#000',fontSize:16,paddingBottom:10}}>Mobile</Text>
+                    <Text style={{color:'#000',fontSize:16,paddingBottom:10}}>{i18n.t('mobileno')}</Text>
                     <View style={{flexDirection:'row',}}>
                       <View style={{flex:0.15,alignItems:'center',justifyContent:'center',backgroundColor:'rgba(0, 0, 0, 0.1)',borderTopLeftRadius:10,borderBottomLeftRadius:10,}}>
                         <MaterialIcons name="phone" size={20} color="black" />
                       </View>
                       <View style={{flex:0.85,alignItems:'center',justifyContent:'center',}}>
                          <TextInput style={{height: 50,borderWidth:1,borderColor:'rgba(0, 0, 0, 0.1)',width:'100%',borderTopRightRadius:10,borderBottomRightRadius:10,backgroundColor:'#fff',paddingHorizontal:15,fontSize:16}}
-                           placeholder="Mobile"
+                           placeholder={i18n.t('mobileno')}
                            selectionColor={'#000'}
                            placeholderTextColor='rgba(0, 0, 0, 0.5)'
                            onChangeText={query => { this.setState({ phone: query }); }}
@@ -447,14 +456,14 @@ class ContactCreation extends React.Component{
                   </View>
 
                   <View style={{marginHorizontal:25,marginVertical:10,}}>
-                    <Text style={{color:'#000',fontSize:16,paddingBottom:10}}>Email</Text>
+                    <Text style={{color:'#000',fontSize:16,paddingBottom:10}}>{i18n.t('email')}</Text>
                     <View style={{flexDirection:'row',}}>
                       <View style={{flex:0.15,alignItems:'center',justifyContent:'center',backgroundColor:'rgba(0, 0, 0, 0.1)',borderTopLeftRadius:10,borderBottomLeftRadius:10,}}>
                         <MaterialCommunityIcons name="email-outline" size={22} color="black" />
                       </View>
                       <View style={{flex:0.85,alignItems:'center',justifyContent:'center',}}>
                          <TextInput style={{height: 50,borderWidth:1,borderColor:'rgba(0, 0, 0, 0.1)',width:'100%',borderTopRightRadius:10,borderBottomRightRadius:10,backgroundColor:'#fff',paddingHorizontal:15,fontSize:16}}
-                           placeholder="Email"
+                           placeholder={i18n.t('email')}
                            selectionColor={'#000'}
                            placeholderTextColor='rgba(0, 0, 0, 0.5)'
                            onChangeText={query => { this.setState({ email: query }); }}
@@ -465,14 +474,14 @@ class ContactCreation extends React.Component{
                   </View>
 
                   <View style={{marginHorizontal:25,marginVertical:10}}>
-                    <Text style={{color:'#000',fontSize:16,paddingBottom:10}}>Company</Text>
+                    <Text style={{color:'#000',fontSize:16,paddingBottom:10}}>{i18n.t('company')}</Text>
                     <View style={{flexDirection:'row',}}>
                       <View style={{flex:0.15,alignItems:'center',justifyContent:'center',backgroundColor:'rgba(0, 0, 0, 0.1)',borderTopLeftRadius:10,borderBottomLeftRadius:10,}}>
                         <FontAwesome5 name="building" size={20} color="black" />
                       </View>
                       <View style={{flex:0.85,alignItems:'center',justifyContent:'center',}}>
                          <TextInput style={{height: 50,borderWidth:1,borderColor:'rgba(0, 0, 0, 0.1)',width:'100%',borderTopRightRadius:10,borderBottomRightRadius:this.state.show&&this.state.companyList.length>0?0:10,backgroundColor:'#fff',paddingHorizontal:15,fontSize:16}}
-                           placeholder="Company"
+                           placeholder={i18n.t('company')}
                            selectionColor={'#000'}
                            placeholderTextColor='rgba(0, 0, 0, 0.5)'
                            onChangeText={query => { this.getCompany(query)  }}
@@ -512,14 +521,14 @@ class ContactCreation extends React.Component{
 
 
                   <View style={{marginHorizontal:25,marginVertical:10}}>
-                    <Text style={{color:'#000',fontSize:16,paddingBottom:10}}>Address</Text>
+                    <Text style={{color:'#000',fontSize:16,paddingBottom:10}}>{i18n.t('address')}</Text>
                     <View style={{flexDirection:'row'}}>
                       <View style={{flex:0.15,alignItems:'center',justifyContent:'center',backgroundColor:'rgba(0, 0, 0, 0.1)',borderTopLeftRadius:10,borderBottomLeftRadius:10,}}>
                         <Octicons name="location" size={20} color="black" />
                       </View>
                       <View style={{flex:0.85,alignItems:'center',justifyContent:'center',}}>
                          <TextInput style={{height: 50,borderWidth:1,borderColor:'rgba(0, 0, 0, 0.1)',width:'100%',borderTopRightRadius:10,borderBottomRightRadius:10,backgroundColor:'#fff',paddingHorizontal:15,fontSize:16}}
-                           placeholder="Address"
+                           placeholder={i18n.t('address')}
                            selectionColor={'#000'}
                            placeholderTextColor='rgba(0, 0, 0, 0.5)'
                            onChangeText={query => { this.setState({ location: query }); }}
@@ -531,14 +540,14 @@ class ContactCreation extends React.Component{
                   </View>
 
                   <View style={{marginHorizontal:25,marginVertical:10}}>
-                    <Text style={{color:'#000',fontSize:16,paddingBottom:10}}>Pincode</Text>
+                    <Text style={{color:'#000',fontSize:16,paddingBottom:10}}>{i18n.t('pincode')}</Text>
                     <View style={{flexDirection:'row',}}>
                       <View style={{flex:0.15,alignItems:'center',justifyContent:'center',backgroundColor:'rgba(0, 0, 0, 0.1)',borderTopLeftRadius:10,borderBottomLeftRadius:10,}}>
                         <Octicons name="location" size={20} color="black" />
                       </View>
                       <View style={{flex:0.85,alignItems:'center',justifyContent:'center',}}>
                          <TextInput style={{height: 50,borderWidth:1,borderColor:'rgba(0, 0, 0, 0.1)',width:'100%',borderTopRightRadius:10,borderBottomRightRadius:10,backgroundColor:'#fff',paddingHorizontal:15,fontSize:16}}
-                           placeholder="Pincode"
+                           placeholder={i18n.t('pincode')}
                            selectionColor={'#000'}
                            placeholderTextColor='rgba(0, 0, 0, 0.5)'
                            onChangeText={query => { this.getPincode(query)  }}
@@ -568,7 +577,7 @@ class ContactCreation extends React.Component{
                   </View>
 
                   <TouchableOpacity style={{marginHorizontal:25,paddingTop:20,paddingBottom:this.state.showMore?10:60}} onPress={()=>{this.changeShowMore(this.state.showMore) }}>
-                    <Text style={{color:'#306f8a',fontSize:15}}>{this.state.showMore?'Show Less':'Show More'}</Text>
+                    <Text style={{color:'#306f8a',fontSize:15}}>{this.state.showMore?i18n.t('showless'):i18n.t('showmore')}</Text>
                   </TouchableOpacity>
 
                   {this.state.showMore&&
@@ -592,14 +601,14 @@ class ContactCreation extends React.Component{
                       </View>
 
                       <View style={{marginHorizontal:25,marginVertical:10,marginBottom:30}}>
-                        <Text style={{color:'#000',fontSize:16,paddingBottom:10}}>Designation</Text>
+                        <Text style={{color:'#000',fontSize:16,paddingBottom:10}}>{i18n.t('designation')}</Text>
                         <View style={{flexDirection:'row',}}>
                           <View style={{flex:0.15,alignItems:'center',justifyContent:'center',backgroundColor:'rgba(0, 0, 0, 0.1)',borderTopLeftRadius:10,borderBottomLeftRadius:10,}}>
                             <Entypo name="briefcase" size={20} color="black" />
                           </View>
                           <View style={{flex:0.85,alignItems:'center',justifyContent:'center',}}>
                              <TextInput style={{height: 50,borderWidth:1,borderColor:'rgba(0, 0, 0, 0.1)',width:'100%',borderTopRightRadius:10,borderBottomRightRadius:10,backgroundColor:'#fff',paddingHorizontal:15,fontSize:16}}
-                               placeholder="Designation"
+                               placeholder={i18n.t('designation')}
                                selectionColor={'#000'}
                                placeholderTextColor='rgba(0, 0, 0, 0.5)'
                                onChangeText={query => { this.setState({ designation: query }); }}

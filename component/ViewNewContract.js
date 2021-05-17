@@ -15,6 +15,10 @@ import moment from 'moment';
 import  { HttpsClient }  from './HttpsClient.js';
 import PropTypes from 'prop-types';
 import * as FileSystem from 'expo-file-system';
+import base64 from 'react-native-base64'
+
+import i18n from 'i18n-js';
+import * as Localization from 'expo-localization';
 
 const { width,height } = Dimensions.get('window');
 
@@ -73,43 +77,99 @@ export default class ViewNewContract extends React.Component{
          editProduct:null,
          createdoc:false,
          allDocs:[],
-         contractPk:this.props.contractPk
+         contractPk:this.props.contractPk,
+         discount:'',
+         grandTotal:0,
+         first_name:'',
+         division:null,
+         bool:false
       };
 
       willFocus = props.navigation.addListener(
      'didFocus',
        payload => {
-
+         this.changeVal()
        }
     );
   }
 
+  changeVal=()=>{
+     this.setState({bool:!this.state.bool},()=>{
+       this.setState({bool:true})
+     })
+   }
+
     setUrl=async()=>{
       var SERVER_URL =  await AsyncStorage.getItem('SERVER_URL');
       this.setState({SERVER_URL})
-      this.getContract()
+      this.getContract(this.state.contractPk)
     }
 
-    getContract=async()=>{
+    getContract=async(pk)=>{
+      this.setState({contractPk:pk})
       var SERVER_URL = await AsyncStorage.getItem('SERVER_URL')
-      var url = SERVER_URL + '/api/clientRelationships/contract/'+this.state.contractPk+'/'
+      var url = SERVER_URL + '/api/clientRelationships/contract/'+pk+'/'
       var data = await HttpsClient.get(url)
-      console.log(data.data,'dsahbfb',url);
       if(data.type=='success'){
-        this.setState({contract:data.data,productList:JSON.parse(data.data.data),termsAndCondition:data.data.termsAndConditionTxts.split('||'),company:data.data.contact.company})
+        var grandTotal = JSON.parse(data.data.data).reduce((a,b)=>{
+          return a+(b.subtotal)
+        },0)
+        this.setState({contract:data.data,productList:JSON.parse(data.data.data),termsAndCondition:data.data.termsAndConditionTxts.split('||'),company:data.data.contact.company,discount:data.data.discount.toString(),contractPk:data.data.pk,grandTotal:grandTotal})
       }else{
         return
       }
     }
 
     componentDidMount=()=>{
-      console.log(this.state.item,'gfjbgfkfgflh');
       this.setUrl()
+      this.getUser()
+    }
+
+    getUser=async()=>{
+      const SERVER_URL = await AsyncStorage.getItem('SERVER_URL');
+      const userToken = await AsyncStorage.getItem('userpk');
+      const sessionid = await AsyncStorage.getItem('sessionid');
+      const csrf = await AsyncStorage.getItem('csrf');
+      if(userToken == null){
+        return
+      }
+
+      fetch(SERVER_URL+'/api/HR/users/'+ userToken + '/', {
+        headers: {
+           "Cookie" :"csrf="+csrf+"; sessionid=" + sessionid +";",
+           'Accept': 'application/json',
+           'Content-Type': 'application/json',
+           'Referer': SERVER_URL,
+           'X-CSRFToken': csrf
+        }
+      }).then((response) => response.json())
+        .then((responseJson) => {
+           this.setState({first_name:responseJson.first_name})
+           if(responseJson.designation!=null){
+             this.getDivision(responseJson.designation.division)
+           }
+        })
+        .catch((error) => {
+          return
+        });
+    }
+
+    getDivision=async(division)=>{
+      var SERVER_URL = await AsyncStorage.getItem('SERVER_URL');
+      var user = await AsyncStorage.getItem('userpk');
+      var url = SERVER_URL + '/api/organization/divisions/'+division+'/'
+      var data = await HttpsClient.get(url)
+      if(data.type=='success'){
+
+        this.setState({division:data.data})
+      }else{
+        return
+      }
     }
 
     createProduct=async()=>{
-      if(this.state.editProduct){
-      var url = this.state.SERVER_URL + '/api/clientRelationships/contract/'+this.state.viewContact.pk+'/'
+      if(this.state.contractPk!=null){
+      var url = this.state.SERVER_URL + '/api/clientRelationships/contract/'+this.state.contractPk+'/'
       if(this.state.description.length==0){
         ToastAndroid.showWithGravityAndOffset("Enter Description",ToastAndroid.LONG,ToastAndroid.BOTTOM,25,50);
         return
@@ -130,7 +190,6 @@ export default class ViewNewContract extends React.Component{
         ToastAndroid.showWithGravityAndOffset("Please search and select HSN/SAC Code",ToastAndroid.LONG,ToastAndroid.BOTTOM,25,50);
         return
       }
-      // console.log(this.state.selectedProductMeta,'this.state.selectedProductMeta');
       // return
       var productData = this.state.productList
       var obj = {
@@ -148,7 +207,7 @@ export default class ViewNewContract extends React.Component{
         totalTax:((Number(this.state.quantity)*Number(this.state.rate))*this.state.selectedProductMeta.taxRate)/100,
         tax:this.state.selectedProductMeta.taxRate,
         taxCode:this.state.selectedProductMeta.code,
-        editIndex:null
+        editIndex:null,
       }
       if(this.state.editProduct!=null){
         productData[this.state.editIndex] = obj
@@ -160,21 +219,18 @@ export default class ViewNewContract extends React.Component{
       },0)
       var sendData = {
         data:JSON.stringify(productData),
-        grandTotal: grandTotal,
-        value: grandTotal,
+        grandTotal: grandTotal-(this.state.discount.length>0?Number(this.state.discount):0),
+        value: grandTotal-(this.state.discount.length>0?Number(this.state.discount):0),
         contact:this.state.viewContact.pk,
-        discount:0,
+        discount:this.state.discount.length>0?Number(this.state.discount):0,
         heading:this.state.item.heading,
         termsAndCondition:this.state.item.pk,
         termsAndConditionTxts:this.state.item.body
       }
-      // console.log(sendData,'gsfdgfd');
       // return
-      console.log(sendData,'sendData');
       var data = await HttpsClient.patch(url,sendData)
-      console.log(data,'fdjgkdn',sendData);
       if(data.type=='success'){
-        this.getContract()
+        this.getContract(data.data.pk)
         this.setState({showModal:false})
       }else{
         return
@@ -204,7 +260,6 @@ export default class ViewNewContract extends React.Component{
         return
       }
 
-      // console.log(this.state.selectedProductMeta,'this.state.selectedProductMeta');
       // return
 
       var obj = {
@@ -240,18 +295,15 @@ export default class ViewNewContract extends React.Component{
         grandTotal: grandTotal,
         value: grandTotal,
         contact:this.state.viewContact.pk,
-        discount:0,
+        discount:this.state.discount.length>0?Number(this.state.discount):0,
         heading:this.state.item.heading,
         termsAndCondition:this.state.item.pk,
         termsAndConditionTxts:this.state.item.body
       }
-      // console.log(sendData,'gsfdgfd');
       // return
-      console.log(sendData,'sendData');
       var data = await HttpsClient.post(url,sendData)
-      console.log(data,'fdjgkdn',);
       if(data.type=='success'){
-        this.getContract()
+        this.getContract(data.data.pk)
         this.setState({showModal:false})
         this.props.redirectPageTo()
         // this.props.navigation.navigate('NavigationScreen')
@@ -259,6 +311,86 @@ export default class ViewNewContract extends React.Component{
         return
       }
     }
+    }
+    saveDiscount=async(discount)=>{
+
+      this.setState({discount})
+
+      var url = this.state.SERVER_URL + '/api/clientRelationships/contract/'+this.state.contractPk+'/'
+
+      var productData = this.state.productList
+
+      var grandTotal = productData.reduce((a,b)=>{
+        return a+(b.subtotal)
+      },0)
+      if(Number(discount)<=grandTotal){
+        console.log(discount,typeof discount,grandTotal,typeof grandTotal);
+        var sendData = {
+          data:JSON.stringify(productData),
+          grandTotal: grandTotal-(discount.length>0?Number(discount):0),
+          value: grandTotal-(this.state.discount.length>0?Number(discount):0),
+          contact:this.state.viewContact.pk,
+          discount:discount.length>0?Number(discount):0,
+          heading:this.state.item.heading,
+          termsAndCondition:this.state.item.pk,
+          termsAndConditionTxts:this.state.item.body
+        }
+        // return
+        var data = await HttpsClient.patch(url,sendData)
+        if(data.type=='success'){
+          this.getContract(data.data.pk)
+        }else{
+          return
+        }
+      }
+
+
+    }
+
+    askRemove = (item,index)=>{
+     Alert.alert(
+         'Remove Item',
+         'Are you sure?',
+         [
+           {text: 'Cancel', onPress: () => {
+             return null
+           }},
+           {text: 'Confirm', onPress: () => {
+             this.removeProduct(item,index)
+           }},
+         ],
+         { cancelable: false }
+       )
+   }
+    removeProduct=async(item,index)=>{
+
+      var url = this.state.SERVER_URL + '/api/clientRelationships/contract/'+this.state.contractPk+'/'
+
+      var productData = this.state.productList
+
+      productData.splice(index,1)
+
+      var grandTotal = productData.reduce((a,b)=>{
+        return a+(b.subtotal)
+      },0)
+      var sendData = {
+        data:JSON.stringify(productData),
+        grandTotal: grandTotal-(this.state.discount.length>0?Number(this.state.discount):0),
+        value: grandTotal-(this.state.discount.length>0?Number(this.state.discount):0),
+        contact:this.state.viewContact.pk,
+        discount:this.state.discount.length>0?Number(this.state.discount):0,
+        heading:this.state.item.heading,
+        termsAndCondition:this.state.item.pk,
+        termsAndConditionTxts:this.state.item.body
+      }
+      // return
+      var data = await HttpsClient.patch(url,sendData)
+      if(data.type=='success'){
+        this.getContract(data.data.pk)
+      }else{
+        return
+      }
+
     }
 
     setModalShow=()=>{
@@ -401,7 +533,6 @@ export default class ViewNewContract extends React.Component{
     this.setState({ description: query,selectedProduct:null,showproductMeta:false });
     var url = this.state.SERVER_URL + '/api/finance/inventory/?limit=10&name__icontains='+query
     var data = await HttpsClient.get(url)
-    console.log(data);
     if(data.type=='success'){
       this.setState({productSuggestion:data.data.results,showProducts:true})
     }else{
@@ -413,7 +544,6 @@ export default class ViewNewContract extends React.Component{
     this.setState({ hsnCode: query,selectedProductMeta:null,showProducts:false });
     var url = this.state.SERVER_URL + '/api/ERP/productMeta/?search='+query
     var data = await HttpsClient.get(url)
-    console.log(data);
     if(data.type=='success'){
       this.setState({productMetaList:data.data,showProductMeta:true})
     }else{
@@ -422,7 +552,6 @@ export default class ViewNewContract extends React.Component{
   }
 
   downloadPDf=async()=>{
-    console.log('jjjjjjjjjjjjjjj');
     var URL =  await AsyncStorage.getItem("SERVER_URL")
     var url = URL+'/api/clientRelationships/downloadInvoice/?contract='+this.state.contractPk+'&output=true'
     var data = await HttpsClient.get(url)
@@ -437,14 +566,27 @@ export default class ViewNewContract extends React.Component{
 
  }
  shareOnWhatsapp=async()=>{
+   var heading = ''
+   var amount = ''
+   var companyName = ''
+   var userName = ''
+   if(this.state.contract!=null){
+     heading = this.state.contract.heading
+     amount = this.state.contract.grandTotal
+     companyName = this.state.division!=null?this.state.division.name:''
+     userName = this.state.first_name
+   }
+   var text = heading+' of Rs.'+amount+' shared by '+userName+' from '+companyName+'.'
    var url =this.state.SERVER_URL+'/api/clientRelationships/downloadInvoice/?contract='+this.state.contractPk+'&output=true'
    var data = await HttpsClient.get(url)
-   console.log(data,'fdjgkdn');
    var fileUrl = ''
+   var imageUrl = ''
    if(data.type=='success'){
      this.setState({pdfurl:data.data.fileUrl})
      fileUrl = this.state.SERVER_URL+'/'+data.data.fileUrl
-    Linking.openURL('whatsapp://send?text='+fileUrl);
+     // imageUrl = `data:image/png;base64,${base64.decode(data.data.data)}`
+     console.log(text);
+    Linking.openURL(`whatsapp://send?text=${text} \n\nyou can download it using below link\n${fileUrl} \n`);
    }else{
      return
    }
@@ -464,6 +606,7 @@ export default class ViewNewContract extends React.Component{
   }
 
     render(){
+      console.log(Number(this.state.discount)<=Number(this.state.grandTotal),this.state.discount,this.state.grandTotal);
         return(
           <View style={{flex:1,backgroundColor:"#f2f2f2"}}>
             <View style={{height:Constants.statusBarHeight,backgroundColor:'#f2f2f2'}}>
@@ -505,8 +648,8 @@ export default class ViewNewContract extends React.Component{
                        }
                     </View>
 
-                    <View style={{paddingVertical:20,}}>
-                      <View style={{flexDirection:'row',paddingHorizontal:25,}}>
+                <View style={{paddingVertical:20,}}>
+                      { this.state.contractPk!=null&&<View style={{flexDirection:'row',paddingHorizontal:25,}}>
                         <View style={{flex:0.45}}>
                           <TouchableOpacity onPress={()=>{this.downloadPDf()}} style={{borderWidth:1,borderColor:'#f00',borderRadius:15,marginRight:5,flexDirection:'row',height:40,alignItems:'center',justifyContent:'center'}}>
                             <AntDesign name="pdffile1" size={20} color="#f00" />
@@ -519,16 +662,16 @@ export default class ViewNewContract extends React.Component{
                             <Text style={{color:'#378a3b',fontSize:14,marginLeft:5}}>Share on Whatsapp</Text>
                           </TouchableOpacity>
                         </View>
-                      </View>
+                      </View>}
 
                       <View style={{paddingTop:30,}}>
                         <View style={{flexDirection:'row',paddingHorizontal:25,}}>
                           <View style={{flex:1,justifyContent:'center'}}>
-                            <Text style={{color:'#000',fontSize:16,}}>PRODUCTS</Text>
+                            <Text style={{color:'#000',fontSize:16,}}>{i18n.t('products')}</Text>
                           </View>
                           <View style={{flex:1,justifyContent:'center'}}>
-                            <TouchableOpacity onPress={()=>{this.setModalShow()}} style={{backgroundColor:'rgba(0,0,0,0.8)',borderRadius:15,height:35,alignItems:'center',justifyContent:'center'}}>
-                              <Text style={{color:'#fff',fontSize:14,fontWeight:'700'}}>Add more products</Text>
+                            <TouchableOpacity onPress={()=>{this.setModalShow()}} style={{backgroundColor:'rgba(0,0,0,0.8)',borderRadius:15,paddingVertical:10,aignItems:'center',justifyContent:'center'}}>
+                              <Text style={{color:'#fff',fontSize:14,fontWeight:'700',textAlign:'center'}}>{i18n.t('addmoreproducts')}</Text>
                             </TouchableOpacity>
                           </View>
                         </View>
@@ -542,7 +685,14 @@ export default class ViewNewContract extends React.Component{
                             <View style={[styles.shadow,{marginVertical:8,backgroundColor:'#EFF1FA',paddingHorizontal:10,paddingVertical:10,borderRadius:5}]} >
                               <TouchableWithoutFeedback onPress={()=>{this.setEditProduct(item,index)}}>
                                 <View  style={{}} >
-                                 <Text style={{color:'#000',fontWeight:'700',fontSize:16}}>{item.desc}</Text>
+                                  <View  style={{flexDirection:'row',}} >
+                                    <View style={{flex:0.8}}>
+                                      <Text style={{color:'#000',fontWeight:'700',fontSize:16}}>{item.desc}</Text>
+                                    </View>
+                                    <TouchableOpacity onPress={()=>{this.askRemove(item,index)}} style={{flex:0.2,justifyContent:'center',alignItems:'center'}}>
+                                      <AntDesign name="delete" size={24} color="#f00" />
+                                    </TouchableOpacity>
+                                    </View>
                                   <View  style={{flexDirection:'row',paddingTop:10}} >
                                     <View style={{flex:0.35,alignItems:'center',justifyContent:'center'}}>
                                       <Text style={{color:'#000',fontWeight:'700',fontSize:18}}>&#8377; {item.rate}</Text>
@@ -553,6 +703,7 @@ export default class ViewNewContract extends React.Component{
                                     </View>
                                     <View style={{flex:0.2,alignItems:'center',justifyContent:'center'}}>
                                       <Text style={{color:'#000',fontWeight:'700',fontSize:18}}>{item.quantity}</Text>
+                                      <Text style={{color:'#c2c2c2',fontWeight:'600',fontSize:12}}>Qty</Text>
                                     </View>
                                     <View style={{flex:0.05,alignItems:'center',justifyContent:'center'}}>
                                       <Text style={{color:'#c2c2c2',fontWeight:'700',fontSize:22}}>=</Text>
@@ -585,7 +736,7 @@ export default class ViewNewContract extends React.Component{
                                 <Text style={{color:'#000',fontWeight:'600',fontSize:18}}>Total before Discount</Text>
                               </View>
                               <View style={{flex:0.3,alignItems:'flex-end'}}>
-                                <Text style={{color:'#000',fontWeight:'700',fontSize:16}}>&#8377; {this.state.contract.grandTotal}</Text>
+                                <Text style={{color:'#000',fontWeight:'700',fontSize:16}}>&#8377; {Number(this.state.grandTotal.toFixed(2))}</Text>
                               </View>
                             </View>
                             <View style={{flexDirection:'row',marginTop:10,borderBottomWidth:2,borderColor:'rgba(0,0,0,0.1)',paddingBottom:15}}>
@@ -593,7 +744,14 @@ export default class ViewNewContract extends React.Component{
                                 <Text style={{color:'#000',fontWeight:'600',fontSize:18}}>Discount</Text>
                               </View>
                               <View style={{flex:0.3,alignItems:'flex-end'}}>
-                                <Text style={{color:'#000',fontWeight:'700',fontSize:16}}>&#8377; {this.state.contract.discount}</Text>
+                                <TextInput style={{height: 45,borderWidth:1,borderColor:Number(this.state.discount)<=Number(this.state.grandTotal)?'#fff':'#f00',width:'100%',borderRadius:10,backgroundColor:'#fff',paddingHorizontal:15,fontSize:16,textAlignVertical:'top',paddingVertical:10}}
+                                  placeholder="Discount"
+                                  selectionColor={'#000'}
+                                  placeholderTextColor='rgba(0, 0, 0, 0.5)'
+                                  onChangeText={query => { this.saveDiscount(query) }}
+                                  value={this.state.discount.toString()}
+                                  keyboardType={'numeric'}
+                                 />
                               </View>
                             </View>
                             <View style={{flexDirection:'row',marginTop:15}}>
@@ -601,7 +759,7 @@ export default class ViewNewContract extends React.Component{
                                 <Text style={{color:'#000',fontWeight:'600',fontSize:18}}>Total</Text>
                               </View>
                               <View style={{flex:0.3,alignItems:'flex-end'}}>
-                                <Text style={{color:'#000',fontWeight:'700',fontSize:16}}>&#8377; {this.state.contract.value}</Text>
+                                <Text style={{color:'#000',fontWeight:'700',fontSize:16}}>&#8377; {this.state.contract.value.toFixed(2)}</Text>
                               </View>
                             </View>
                           </View>
@@ -612,7 +770,7 @@ export default class ViewNewContract extends React.Component{
                         <View style={{paddingVertical:15}}>
                           <View style={{flexDirection:'row',paddingHorizontal:25,}}>
                             <View style={{flex:0.7,justifyContent:'center'}}>
-                              <Text style={{color:'#000',fontSize:15,}}>TERMS AND CONDITIONS</Text>
+                              <Text style={{color:'#000',fontSize:15,}}>{i18n.t('termandconditions')}</Text>
                             </View>
                             <View style={{flex:0.3,justifyContent:'center',alignItems:'flex-end'}}>
                               {
@@ -637,6 +795,7 @@ export default class ViewNewContract extends React.Component{
                           )}}
                           />
                           }
+
                         </View>
 
                       </View>
